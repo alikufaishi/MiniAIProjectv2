@@ -68,12 +68,12 @@ public class JwtController {
         return ResponseEntity.ok(new JwtResponseModel(jwtToken));
     }
 
-
+// Indtil kl. 15.10: lav en knap på siden, som henter denne:
     @PostMapping("/getSecret")
     public ResponseEntity<Map> getSecret() {
         System.out.println("getSecret is called");
         Map<String,String > map = new HashMap<>();
-        map.put("message","this is secret from server");
+        map.put("message","this is secret from server, uuuuuhh");
         return ResponseEntity.ok(map);
     }
 
