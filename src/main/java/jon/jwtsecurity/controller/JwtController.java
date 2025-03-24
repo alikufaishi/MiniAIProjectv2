@@ -16,6 +16,8 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +52,7 @@ public class JwtController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponseModel> createToken(@RequestBody JwtRequestModel request) throws Exception {
+    public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response) throws Exception {
         // HttpServletRequest servletRequest is available from Spring, if needed.
         System.out.println(" JwtController createToken Call: 4" + request.getUsername());
         try {
@@ -61,11 +63,23 @@ public class JwtController {
         } catch (DisabledException e) {
             throw new Exception("USER_DISABLED", e);
         } catch (BadCredentialsException e) {
-            return ResponseEntity.ok(new JwtResponseModel("bad credentials"));
+            return ResponseEntity.ok(Map.of("message", "Bad Credentials"));
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwtToken = jwtTokenManager.generateJwtToken(userDetails);
-        return ResponseEntity.ok(new JwtResponseModel(jwtToken));
+        // refactor: send token in cookie:
+        sendJwtAsCookie(response,jwtToken);
+        return ResponseEntity.ok(Map.of("message", "Login successful"));
+        //return ResponseEntity.ok(new JwtResponseModel(jwtToken));
+    }
+
+    public void sendJwtAsCookie(HttpServletResponse response, String jwt) {
+        Cookie cookie = new Cookie("token", jwt);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // NOTICE: set to TRUE for production
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 60); // 1 hour
+        response.addCookie(cookie);
     }
 
 // Indtil kl. 15.10: lav en knap på siden, som henter denne:

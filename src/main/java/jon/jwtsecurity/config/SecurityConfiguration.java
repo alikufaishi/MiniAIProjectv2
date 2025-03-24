@@ -17,7 +17,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
@@ -32,23 +31,6 @@ public class SecurityConfiguration implements WebMvcConfigurer {
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        System.out.println("WebSec configure(HttpSecurity) Call: 2");
-//        http.cors().and().csrf().disable()  // was cors().and() after http
-//                // to implement CSRF token https://www.javainuse.com/spring/boot_security_csrf
-//                // "antMathcers" comes from Apache Ant build system.
-//                // Since Spring 3, the next line replaces the old one:
-//                // .authorizeRequests().antMatchers("/login", "/signup").permitAll()
-//        .authorizeHttpRequests().requestMatchers("/login", "/signup").permitAll()
-//        .anyRequest().authenticated()
-//        .and()
-//        .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
-//        .and()
-//        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
-//        return http.build();
-//    }
 @Bean
 public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -82,14 +64,5 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-//    @Override
-//    public void addCorsMappings(CorsRegistry registry) {
-//        System.out.println("addCorsMappings called");
-//        registry.addMapping("/**")  // /** means match any string recursively
-//                .allowedOriginPatterns("http://localhost:*") //Multiple strings allowed. Wildcard * matches all port numbers.
-//                .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS") // decide which methods to allow
-//                .allowCredentials(true);
-//    }
 
 }
