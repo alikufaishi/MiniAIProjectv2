@@ -26,10 +26,8 @@ public class UserService implements IUserService{
 
     @Override
     public User save(User user) {
-//        if(user.getPassword() == null) {
             PasswordEncoder pw = SecurityConfiguration.passwordEncoder();
             user.setPassword(pw.encode(user.getPassword()));
-//        }
         return userRepository.save(user);
     }
 

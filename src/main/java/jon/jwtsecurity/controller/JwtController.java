@@ -51,7 +51,7 @@ public class JwtController {
         }
     }
 
-    @PostMapping("/login")
+    @PostMapping("/login") // Security, step 1: Incoming request
     public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response) throws Exception {
         // HttpServletRequest servletRequest is available from Spring, if needed.
         System.out.println(" JwtController createToken Call: 4" + request.getUsername());
@@ -59,6 +59,8 @@ public class JwtController {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(),
                             request.getPassword())
+                    // Security, step 2:
+                    // will call loadUserByUsername(uname, pw) from the object of JwtUserDetailsService class
             );
         } catch (DisabledException e) {
             throw new Exception("USER_DISABLED", e);
@@ -67,7 +69,7 @@ public class JwtController {
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwtToken = jwtTokenManager.generateJwtToken(userDetails);
-        // refactor: send token in cookie:
+        // refactor: send token in cookie. response object is managed by Spring Security, therefore no return here.
         sendJwtAsCookie(response,jwtToken);
         return ResponseEntity.ok(Map.of("message", "Login successful"));
         //return ResponseEntity.ok(new JwtResponseModel(jwtToken));
@@ -76,13 +78,12 @@ public class JwtController {
     public void sendJwtAsCookie(HttpServletResponse response, String jwt) {
         Cookie cookie = new Cookie("token", jwt);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // NOTICE: set to TRUE for production
-        cookie.setPath("/");
+        cookie.setSecure(false); // NOTICE: set to TRUE for production (HTTPS)
+        cookie.setPath("/"); // here you can specify endpoints to get this particular cookie !
         cookie.setMaxAge(60 * 60); // 1 hour
         response.addCookie(cookie);
     }
 
-// Indtil kl. 15.10: lav en knap på siden, som henter denne:
     @PostMapping("/getSecret")
     public ResponseEntity<Map> getSecret() {
         System.out.println("getSecret is called");
