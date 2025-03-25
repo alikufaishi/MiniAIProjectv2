@@ -77,11 +77,24 @@ public class JwtController {
 
     public void sendJwtAsCookie(HttpServletResponse response, String jwt) {
         Cookie cookie = new Cookie("token", jwt);
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(true); // er IKKE tilgængelig i javascript
         cookie.setSecure(false); // NOTICE: set to TRUE for production (HTTPS)
         cookie.setPath("/"); // here you can specify endpoints to get this particular cookie !
         cookie.setMaxAge(60 * 60); // 1 hour
         response.addCookie(cookie);
+    }
+
+    @PostMapping("/logout2")
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        System.out.println("Logout successful...");
+        Cookie cookie = new Cookie("token", "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // true in production
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // This deletes the cookie
+        response.addCookie(cookie);
+        //return ResponseEntity.ok(Map.of("message", "Logged out"));
+        return ResponseEntity.ok("Logged out");
     }
 
     @PostMapping("/getSecret")
