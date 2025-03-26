@@ -9,12 +9,14 @@ import jon.jwtsecurity.service.JwtUserDetailsService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -55,6 +57,7 @@ public class JwtController {
     public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response) throws Exception {
         // HttpServletRequest servletRequest is available from Spring, if needed.
         System.out.println(" JwtController createToken Call: 4" + request.getUsername());
+        Map<String, String> map = new HashMap<>();
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(),
@@ -62,17 +65,22 @@ public class JwtController {
                     // Security, step 2:
                     // will call loadUserByUsername(uname, pw) from the object of JwtUserDetailsService class
             );
-        } catch (DisabledException e) {
-            throw new Exception("USER_DISABLED", e);
+        } catch (UsernameNotFoundException e) {
+            map.put("message", "username not found " + e.getMessage());
+            return ResponseEntity.ok(map);
         } catch (BadCredentialsException e) {
-            return ResponseEntity.ok(Map.of("message", "Bad Credentials"));
+            map.put("message", "username or password incorrect");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(map);
+        }catch (Exception e) {
+            map.put("message", "something went wrong. General exception");
+            return ResponseEntity.ok(map);
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwtToken = jwtTokenManager.generateJwtToken(userDetails);
-        // refactor: send token in cookie. response object is managed by Spring Security, therefore no return here.
+        // sends token in cookie. response object is managed by Spring Security, therefore no return here:
         sendJwtAsCookie(response,jwtToken);
-        return ResponseEntity.ok(Map.of("message", "Login successful"));
-        //return ResponseEntity.ok(new JwtResponseModel(jwtToken));
+        map.put("message", "login success");
+        return ResponseEntity.ok(map);
     }
 
     public void sendJwtAsCookie(HttpServletResponse response, String jwt) {
@@ -84,7 +92,7 @@ public class JwtController {
         response.addCookie(cookie);
     }
 
-    @PostMapping("/logout2")
+    @PostMapping("/logout2") // named "logout2" because Spring Boot has "taken" logout
     public ResponseEntity<String> logout(HttpServletResponse response) {
         System.out.println("Logout successful...");
         Cookie cookie = new Cookie("token", "");
@@ -93,13 +101,11 @@ public class JwtController {
         cookie.setPath("/");
         cookie.setMaxAge(0); // This deletes the cookie
         response.addCookie(cookie);
-        //return ResponseEntity.ok(Map.of("message", "Logged out"));
         return ResponseEntity.ok("Logged out");
     }
 
     @PostMapping("/getSecret")
     public ResponseEntity<Map> getSecret() {
-        System.out.println("getSecret is called");
         Map<String,String > map = new HashMap<>();
         map.put("message","this is secret from server, uuuuuhh");
         return ResponseEntity.ok(map);
@@ -109,11 +115,19 @@ public class JwtController {
     public ResponseEntity<Map> deleteUser(@RequestBody User user) { // hvis man kommer hertil, er token OK
         System.out.println("deleteUser is called with user: " + user.getUsername());
         // evt. findById, som finder hele objektet fra MySQL, inkl. id.
-        List<User> users =  userService.findByName(user.getUsername());
-        User userToDelete = users.get(0);
-        userService.delete(userToDelete);
-        Map<String,String > map = new HashMap<>();
-        map.put("message","user deleted, if found " + user.getUsername());
+        Map<String, String> map = new HashMap<>();
+        try {
+            List<User> users = userService.findByName(user.getUsername());
+            if(users.size()==0){
+                map.put("message", "user not found: " + user.getUsername());
+            }else {
+                User userToDelete = users.get(0);
+                userService.delete(userToDelete);
+                map.put("message", "user deleted: " + user.getUsername());
+            }
+        }catch (Exception e) {
+            map.put("message", "error deleting user: " + user.getUsername() + " " + e.getMessage());
+        }
         return ResponseEntity.ok(map);
     }
 
