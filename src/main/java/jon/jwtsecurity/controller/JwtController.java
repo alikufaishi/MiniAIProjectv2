@@ -1,5 +1,6 @@
 package jon.jwtsecurity.controller;
 
+import jakarta.servlet.http.HttpSession;
 import jon.jwtsecurity.JwtTokenManager;
 import jon.jwtsecurity.model.JwtRequestModel;
 import jon.jwtsecurity.model.JwtResponseModel;
@@ -54,8 +55,9 @@ public class JwtController {
     }
 
     // Ali: Denne udsteder udsteder JWT som HttpOnly-cookie
+    // Ali: Tilføjet at den tager imod httpsession som parameter også
     @PostMapping("/login") // Security, step 1: Incoming request
-    public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response) throws Exception {
+    public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response, HttpSession session) throws Exception {
         // HttpServletRequest servletRequest is available from Spring, if needed.
         System.out.println(" JwtController createToken Call: 4" + request.getUsername());
         Map<String, String> map = new HashMap<>();
@@ -80,6 +82,10 @@ public class JwtController {
         final String jwtToken = jwtTokenManager.generateJwtToken(userDetails);
         // sends token in cookie. response object is managed by Spring Security, therefore no return here:
         sendJwtAsCookie(response,jwtToken);
+
+        // Ali: Gem brugernavnet i sessionen
+        session.setAttribute("username", request.getUsername());
+
         map.put("message", "login success");
         return ResponseEntity.ok(map);
     }

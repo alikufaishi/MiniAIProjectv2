@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +39,59 @@ public class GeminiService {
     // Indledningsvis er der tale om første besked i samtalen
     private boolean isFirstMessage = true;
 
+    // Ali: tilføjelse så vi har flere conversations - en til hver bruger
+    private final Map<String, List<GeminiContentDTO>> conversations = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> firstMessages = new ConcurrentHashMap<>();
+
     // Hovedmetoden som tager imod brugerens besked og kalder API'en
+
+    public Mono<String> generateText(String userPrompt, String username) {
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
+
+        conversations.putIfAbsent(username, new ArrayList<>());
+        firstMessages.putIfAbsent(username, true);
+        List<GeminiContentDTO> conversation = conversations.get(username);
+
+        if (firstMessages.get(username)) {
+            String systemPrompt = "Du er en hjælpsom og vidende bogassistent. Du anbefaler bøger ud fra mine interesser, genrer og behov. Giv mig herefter altid 3 anbefalinger, angiv hvor lang bogen er og hvornår den er fra.";
+            conversation.add(new GeminiContentDTO(
+                    "user",
+                    List.of(new GeminiContentDTO.Part(systemPrompt))
+            ));
+            firstMessages.put(username, false);
+        }
+
+        conversation.add(new GeminiContentDTO(
+                "user",
+                List.of(new GeminiContentDTO.Part(userPrompt))
+        ));
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("contents", conversation);
+
+        return webClient.post()
+                .uri(endpoint)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(GeminiResponseDTO.class)
+                .map(response -> {
+                    try {
+                        String reply = response.getCandidates().get(0).getContent().getParts().get(0).getText();
+
+                        conversation.add(new GeminiContentDTO(
+                                "model",
+                                List.of(new GeminiContentDTO.Part(reply))
+                        ));
+
+                        return reply;
+                    } catch (Exception e) {
+                        return "Fejl ved parsing af svar: " + e.getMessage();
+                    }
+                });
+    }
+
+    /*
     public Mono<String> generateText(String userPrompt) {
         String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
 
@@ -86,5 +141,7 @@ public class GeminiService {
                     }
                 });
     }
+
+     */
 }
 

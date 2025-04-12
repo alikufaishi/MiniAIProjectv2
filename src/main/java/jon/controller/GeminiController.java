@@ -1,5 +1,6 @@
 package jon.controller;
 
+import jakarta.servlet.http.HttpSession;
 import jon.service.GeminiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,11 +31,31 @@ public class GeminiController {
     }
     */
 
+    // Ali: Deaktiveret denne fordi lavet en ny som finder brugernavn også
+    /*
     @GetMapping("/generate")
     // Requestparam er den inputtekst som brugeren har skrevet i API-kaldet
     public ResponseEntity<String> generate(@RequestParam String prompt) {
         // Block her betyder at man venter på svaret fra API-kaldet
         String result = geminiService.generateText(prompt).block();
+        return ResponseEntity.ok(result);
+    }
+    */
+
+    @GetMapping("/generate")
+    // Requestparam er den inputtekst som brugeren har skrevet i API-kaldet
+    // Jeg har tilføjet HttpSession for at hente username fra sessionen
+    public ResponseEntity<String> generate(@RequestParam String prompt, HttpSession session) {
+        // Hent brugernavnet fra sessionen (forudsætter at det er sat tidligere i login-proces)
+        String username = (String) session.getAttribute("username");
+
+        if (username == null) {
+            return ResponseEntity.status(401).body("Bruger ikke logget ind");
+        }
+
+        // Block her betyder at man venter på svaret fra API-kaldet
+        String result = geminiService.generateText(prompt, username).block();
+
         return ResponseEntity.ok(result);
     }
 }
