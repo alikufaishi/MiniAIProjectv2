@@ -25,6 +25,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SecurityConfiguration implements WebMvcConfigurer {
     private JwtAuthenticationEntryPoint authenticationEntryPoint;
+
+    // Ali: Her laver vi et filter som bruges i security FilterChain nedenfor
     private JwtFilter filter;
     @Bean
     public static PasswordEncoder passwordEncoder() {
@@ -43,6 +45,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Ali: her bruger vi JwtFilter til at tjekke for gyldige tokens
             .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
     return http.build();
 }

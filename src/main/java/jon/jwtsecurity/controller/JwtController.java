@@ -53,6 +53,7 @@ public class JwtController {
         }
     }
 
+    // Ali: Denne udsteder udsteder JWT som HttpOnly-cookie
     @PostMapping("/login") // Security, step 1: Incoming request
     public ResponseEntity<Map<String,String >> createToken(@RequestBody JwtRequestModel request, HttpServletResponse response) throws Exception {
         // HttpServletRequest servletRequest is available from Spring, if needed.
@@ -92,6 +93,7 @@ public class JwtController {
         response.addCookie(cookie);
     }
 
+    // Ali: denne metode fjerner tokens
     @PostMapping("/logout2") // named "logout2" because Spring Boot has "taken" logout
     public ResponseEntity<String> logout(HttpServletResponse response) {
         System.out.println("Logout successful...");
@@ -104,10 +106,20 @@ public class JwtController {
         return ResponseEntity.ok("Logged out");
     }
 
+    /*
     @PostMapping("/getSecret")
-    public ResponseEntity<Map> getSecret() {
+    public String getSecret() {
         Map<String,String > map = new HashMap<>();
         map.put("message","this is secret from server, uuuuuhh");
+        //return ResponseEntity.ok(map);
+        return "home/index";
+    }
+    */
+
+    @PostMapping("/getSecret")
+    public ResponseEntity<?> getSecret() {
+        Map<String, String> map = new HashMap<>();
+        map.put("message", "En besked");
         return ResponseEntity.ok(map);
     }
 
