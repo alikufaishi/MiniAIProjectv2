@@ -84,7 +84,8 @@ public class JwtController {
         sendJwtAsCookie(response,jwtToken);
 
         // Ali: Gem brugernavnet i sessionen
-        session.setAttribute("username", request.getUsername());
+        // Deaktiveret i anden runde fordi vi undgår at bruge sessions og hellere får username fra JWT
+        //session.setAttribute("username", request.getUsername());
 
         map.put("message", "login success");
         return ResponseEntity.ok(map);
