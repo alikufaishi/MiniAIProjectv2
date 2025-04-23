@@ -36,11 +36,10 @@ public class GeminiService {
     // Vi opretter en arraylist som indeholder maps af key (String) og value (objekter) som er samtalen.
     private List<GeminiContentDTO> conversation = new ArrayList<>();
 
-    // Indledningsvis er der tale om første besked i samtalen
-    private boolean isFirstMessage = true;
-
-    // Ali: tilføjelse så vi har flere conversations - en til hver bruger
+    // Map af conversations er en liste som muliggør at vi har en samtale til hver bruger
+    // ConcurrentHashMap muliggør at flere brugere interagerer med mappen/listen samtidig
     private final Map<String, List<GeminiContentDTO>> conversations = new ConcurrentHashMap<>();
+
     private final Map<String, Boolean> firstMessages = new ConcurrentHashMap<>();
 
     // Hovedmetoden som tager imod brugerens besked og kalder API'en
@@ -48,12 +47,17 @@ public class GeminiService {
     public Mono<String> generateText(String userPrompt, String username) {
         String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
 
+        // Hvis brugeren ikke allerede er i conversations-mappen, så oprettes han i den
         conversations.putIfAbsent(username, new ArrayList<>());
         firstMessages.putIfAbsent(username, true);
-        List<GeminiContentDTO> conversation = conversations.get(username);
+
+        // Får conversation til at pege på samme objekt som i vores conversations-map
+        // Efterfølgende tilføjelser til conversation, bliver gemt i conversations-mappen
+        conversation = conversations.get(username);
 
         if (firstMessages.get(username)) {
-            String systemPrompt = "Du er en hjælpsom og vidende bogassistent. Du anbefaler bøger ud fra mine interesser, genrer og behov. Giv mig herefter altid 3 anbefalinger, angiv hvor lang bogen er og hvornår den er fra.";
+            String systemPrompt = "Du er en hjælpsom og vidende bogassistent. Du anbefaler bøger ud fra mine interesser, " +
+                    "genrer og behov. Giv mig herefter altid 3 anbefalinger, angiv hvor lang bogen er og hvornår den er fra.";
             conversation.add(new GeminiContentDTO(
                     "user",
                     List.of(new GeminiContentDTO.Part(systemPrompt))
@@ -66,9 +70,11 @@ public class GeminiService {
                 List.of(new GeminiContentDTO.Part(userPrompt))
         ));
 
+        // Deklarer map af String-Object som starter med at indeholde "contents" og "conversation"-objektet.
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("contents", conversation);
 
+        // Selve API-post-requesten med den opbyggede requestbody
         return webClient.post()
                 .uri(endpoint)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -83,7 +89,6 @@ public class GeminiService {
                                 "model",
                                 List.of(new GeminiContentDTO.Part(reply))
                         ));
-
                         return reply;
                     } catch (Exception e) {
                         return "Fejl ved parsing af svar: " + e.getMessage();

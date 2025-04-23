@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+// Serviceklasse der implementerer Springs UserDetailsService
+
 @Service
 @AllArgsConstructor
 public class JwtUserDetailsService implements UserDetailsService {

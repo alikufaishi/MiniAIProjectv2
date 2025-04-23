@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+// Denne implementerer vores hjemmelavede IUserService interface
+
 @AllArgsConstructor
 @Service
 public class UserService implements IUserService{
